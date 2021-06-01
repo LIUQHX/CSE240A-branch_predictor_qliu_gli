@@ -11,9 +11,9 @@
 //
 // TODO:Student Information
 //
-const char *studentName = "NAME";
-const char *studentID   = "PID";
-const char *email       = "EMAIL";
+const char *studentName = "Qihong Liu; Guanghao Li";
+const char *studentID   = "A59004984; ";
+const char *email       = "qil011@ucsd.edu; ";
 
 //------------------------------------//
 //      Predictor Configuration       //
@@ -42,14 +42,56 @@ int verbose;
 //        Predictor Functions         //
 //------------------------------------//
 
+//------------------------------------//
+//              Gshare                //
+//------------------------------------//
+
+
+//------------------------------------//
+//             Tournament             //
+//------------------------------------//
+
+void init_tournament_predictor(){
+  
+}
+
+uint8_t make_tournament_prediction(pc){
+
+}
+
+void train_tournament_predictor(pc, outcome){
+
+}
+
+//------------------------------------//
+//               Custom               //
+//------------------------------------//
+
+//------------------------------------//
+//          Predictor Entry           //
+//------------------------------------//
+
 // Initialize the predictor
 //
 void
 init_predictor()
 {
-  //
-  //TODO: Initialize Branch Predictor Data Structures
-  //
+  switch (bpType) {
+    case STATIC:
+      break;
+    case GSHARE:
+      init_gshare_predictor();
+      break;
+    case TOURNAMENT:
+      init_tournament_predictor();
+      break;
+    case CUSTOM:
+      init_custom_predictor();
+      break;
+    default:
+      break;
+  }
+  return;
 }
 
 // Make a prediction for conditional branch instruction at PC 'pc'
@@ -68,8 +110,11 @@ make_prediction(uint32_t pc)
     case STATIC:
       return TAKEN;
     case GSHARE:
+      return make_gshare_prediction(pc);
     case TOURNAMENT:
+      return make_tournament_prediction(pc);
     case CUSTOM:
+      return make_custom_prediction(pc);
     default:
       break;
   }
@@ -85,7 +130,20 @@ make_prediction(uint32_t pc)
 void
 train_predictor(uint32_t pc, uint8_t outcome)
 {
-  //
-  //TODO: Implement Predictor training
-  //
+  switch (bpType) {
+    case STATIC:
+      break;
+    case GSHARE:
+      train_gshare_predictor(pc, outcome);
+      break;
+    case TOURNAMENT:
+      train_tournament_predictor(pc, outcome);
+      break;
+    case CUSTOM:
+      train_custom_predictor(pc, outcome);
+      break;
+    default:
+      break;
+  }
+  return;
 }
