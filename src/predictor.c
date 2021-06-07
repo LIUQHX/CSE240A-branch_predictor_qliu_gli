@@ -44,7 +44,9 @@ uint8_t gPredition; // global branch prediction
 uint8_t lPredition; // local branch prediction
 uint8_t tPredition; // tournament branch prediction
 
-
+// gshare
+uint32_t globalHistory;
+uint32_t *globalBHT;
 
 
 //
@@ -60,6 +62,41 @@ uint8_t tPredition; // tournament branch prediction
 //              Gshare                //
 //------------------------------------//
 
+void init_tournament_predictor(){
+	// init globalHistory and global Branch History Table
+	globalHistory = 0;
+	int bitsNeed = sizeof(uint32_t) << pcIndexBits;
+	globalBHT = malloc(bitsNeed);
+	if(globalBHT==NULL){
+		fprintf(stderr, "[ERROR] [Malloc] global branch history table failed.\n");
+	    exit(-1);
+	}
+	memset(globalBHT, WN, bitsNeed);
+}
+
+uint8_t make_tournament_prediction(pc){
+	// compute index
+	uint32_t bitMask = (1 << ghistoryBits) - 1;
+	uint32_t globalBHT_index = (pc ^ globalHistory) & bitMask;
+	// get prediction from globalBHT
+	if(globalBHT[globalBHT_index] < WT) return NOTTAKEN;
+	else return TAKEN;
+}
+
+void train_tournament_predictor(pc, outcome){
+	// compute index
+	uint32_t bitMask = (1 << ghistoryBits) - 1;
+	uint32_t globalBHT_index = (pc ^ globalHistory) & bitMask;
+	// update globalHistory
+	globalHistory = (globalHistory << 1) + outcome;
+	// 2-bit predict
+	if(outcome == TAKEN){
+		if(globalBHT[globalBHT_index] < ST) globalBHT[globalBHT_index] += 1;
+	}
+	else{
+		if(globalBHT[globalBHT_index] > SN) globalBHT[globalBHT_index] -= 1;
+	}
+}
 
 //------------------------------------//
 //             Tournament             //
