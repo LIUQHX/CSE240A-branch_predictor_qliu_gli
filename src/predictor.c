@@ -33,6 +33,20 @@ int verbose;
 //      Predictor Data Structures     //
 //------------------------------------//
 
+// tournament
+uint32_t *lht;  // local history table
+uint8_t *lbt;  // local branch table
+uint32_t ghr;  // global history register
+uint8_t *gbt;  // global branch table
+uint8_t *cbt;  // choice branch table
+
+uint8_t gPredition; // global branch prediction
+uint8_t lPredition; // local branch prediction
+uint8_t tPredition; // tournament branch prediction
+
+
+
+
 //
 //TODO: Add your own Branch Predictor data structures here
 //
@@ -52,15 +66,140 @@ int verbose;
 //------------------------------------//
 
 void init_tournament_predictor(){
-  
+  // Initialize Local History Table
+  lht=(uint8_t*)malloc((1<<pcIndexBits)*sizeof(uint8_t));
+  if(lht==NULL){
+    fprintf(stderr, "[ERROR] [Malloc] local history table failed.\n");
+    exit(-1);
+  }
+  memset(lht, 0, (1<<pcIndexBits)*sizeof(uint8_t));
+
+  // Initialize Local Branch Table
+  lbt=(uint8_t*)malloc((1<<lhistoryBits)*sizeof(uint8_t));
+  if(lbt==NULL){
+    fprintf(stderr, "[ERROR] [Malloc] local branch table failed.\n");
+    exit(-1);
+  }
+  memset(lbt, WN, (1<<lhistoryBits)*sizeof(uint8_t));
+
+  // Initialize Global History Register
+  ghr = 0;
+
+  // Initialize Global Branch Table
+  gbt=(uint8_t*)malloc((1<<ghistoryBits)*sizeof(uint8_t));
+  if(gbt==NULL){
+    fprintf(stderr, "[ERROR] [Malloc] global branch table failed.\n");
+    exit(-1);
+  }
+  memset(gbt, WN, (1<<ghistoryBits)*sizeof(uint8_t));
+
+  // Initialize Choice Branch Table
+  cbt=(uint8_t*)malloc((1<<ghistoryBits)*sizeof(uint8_t));
+  if(cbt==NULL){
+    fprintf(stderr, "[ERROR] [Malloc] choice branch table failed.\n");
+    exit(-1);
+  }
+  memset(cbt, WN, (1<<ghistoryBits)*sizeof(uint8_t));
+
+  gPredition=WN;
+  lPredition=WN;
+
+  printf("tournament initialization finished.")
 }
 
-uint8_t make_tournament_prediction(pc){
+uint8_t make_local_prediction(uint32_t pc){
+  uint32_t lbtPred=lbt[lht[pc & (1<<pcIndexBits -1)]];
+  if(lbtPred == WN || lbtPred == SN){
+    return NOTTAKEN;
+  }
+  else{
+    return TAKEN;
+  }
+}
+
+uint8_t make_global_prediction(uint32_t pc){
+  uint32_t gbtPred=gbt[ghr & (1<<ghistoryBits -1)];
+  if(gbtPred == WN || gbtPred == SN){
+    return NOTTAKEN;
+  }
+  else{
+    return TAKEN;
+  }
+}
+uint8_t tournament_choose(uint8_t localPred, uint8_t globalPred, uint32_t pc){
+  uint8_t choice = cbt[ghr & ((1<<ghistoryBits)-1)];
+  return (choice == WN || choice == SN) ? globalResult : localResult;
+}
+
+uint8_t make_tournament_prediction(uint32_t pc){
+  uint8_t localPred = make_local_prediction(pc);
+  uint8_t globalPred = make_global_prediction(pc);
+  return tournament_choose(localPred, globalPred, pc);
+}
+
+void train_local_predictor(uint32_t pc, uint8_t outcome) {
+  // update lbt
+  if(outcome==NOTTAKEN){
+    if(lbt[lht[pc & (1<<pcIndexBits -1)]]!=SN){
+      lbt[lht[pc & (1<<pcIndexBits -1)]]--;
+    }
+  }
+  else{
+    if(lbt[lht[pc & (1<<pcIndexBits -1)]]!=ST){
+      lbt[lht[pc & (1<<pcIndexBits -1)]]++;
+    }
+  }
+
+  // update lht
+  lht[pc & (1<<pcIndexBits -1)] <<=1 ;
+  lht[pc & (1<<pcIndexBits -1)] &= ((1 << lhistoryBits) - 1);
+  lht[pc & (1<<pcIndexBits -1)] |= outcome;
 
 }
 
-void train_tournament_predictor(pc, outcome){
+void train_global_predictor(uint32_t pc, uint8_t outcome) {
+  // update gbt
+  if(outcome==NOTTAKEN){
+    if(gbt[ghr & (1<<ghistoryBits -1)]!=SN){
+      gbt[ghr & (1<<ghistoryBits -1)]--;
+    }
+  }
+  else{
+    if(gbt[ghr & (1<<ghistoryBits -1)]!=ST){
+      gbt[ghr & (1<<ghistoryBits -1)]++;
+    }
+  }
+  // update ghr
+  ghr <<=1;
+  ghr &= ((1 << ghistoryBits) - 1);
+  ghr |= outcome;
+}
 
+void train_chooser_predictor(uint32_t pc, uint8_t outcome) {
+  uint8_t localOutcome = make_local_prediction(pc);
+  uint8_t globalOutcome = make_global_prediction(pc);
+
+  uint32_t lbtPred=lbt[lht[pc & (1<<pcIndexBits -1)]];
+  uint32_t gbtPred=ghr[ghr & (1<<ghistoryBits -1)];
+  uint8_t choice = cbt[ghr & ((1<<ghistoryBits)-1)];
+
+  if(localOutcome!=globalOutcome){
+    if(localOutcome==outcome && choice!=ST){
+      cbt[ghr & ((1<<ghistoryBits)-1)]++;
+    }
+    else if(globalOutcome==outcome && choice!=SN){
+      cbt[ghr & ((1<<ghistoryBits)-1)]--;
+    }
+  }
+}
+
+void train_tournament_predictor(uint32_t pc, uint8_t outcome){
+  // train chooser
+  train_chooser_predictor(pc, outcome);
+  // train local predictor
+  train_local_predictor(pc, outcome);
+  // train global predictor
+  train_global_predictor(pc, outcome);
 }
 
 //------------------------------------//
