@@ -62,7 +62,7 @@ uint32_t *globalBHT;
 //              Gshare                //
 //------------------------------------//
 
-void init_tournament_predictor(){
+void init_gshare_predictor(){
 	// init globalHistory and global Branch History Table
 	globalHistory = 0;
 	int bitsNeed = sizeof(uint32_t) << pcIndexBits;
@@ -72,9 +72,10 @@ void init_tournament_predictor(){
 	    exit(-1);
 	}
 	memset(globalBHT, WN, bitsNeed);
+	printf("Gshare initialization finished.")
 }
 
-uint8_t make_tournament_prediction(pc){
+uint8_t make_gshare_prediction(pc){
 	// compute index
 	uint32_t bitMask = (1 << ghistoryBits) - 1;
 	uint32_t globalBHT_index = (pc ^ globalHistory) & bitMask;
@@ -83,7 +84,7 @@ uint8_t make_tournament_prediction(pc){
 	else return TAKEN;
 }
 
-void train_tournament_predictor(pc, outcome){
+void train_gshare_predictor(pc, outcome){
 	// compute index
 	uint32_t bitMask = (1 << ghistoryBits) - 1;
 	uint32_t globalBHT_index = (pc ^ globalHistory) & bitMask;
