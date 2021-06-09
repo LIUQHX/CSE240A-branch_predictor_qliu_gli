@@ -52,6 +52,16 @@ uint32_t *globalBHT;
 //
 //TODO: Add your own Branch Predictor data structures here
 //
+// perceptron
+uint8_t pPrediction;
+uint32_t perceptron_num;
+int **weights;
+uint32_t weight_num;
+uint8_t *history;
+uint32_t threshold;
+uint32_t history_len;
+
+
 
 
 //------------------------------------//
@@ -244,6 +254,27 @@ void train_tournament_predictor(uint32_t pc, uint8_t outcome){
 //               Custom               //
 //------------------------------------//
 
+
+void train_custom_predictor(uint32_t pc, uint8_t outcome){
+  uint32_t percIdx=(pc & 1<<pcIndexBits) % perceptron_num;
+  int y=0;
+  for(int i=0;i<weight_num;i++){
+    y+=(history[i]>0)?weights[percIdx][i]:(-weights[percIdx][i]);
+  }
+  int out_sign=(outcome==TAKEN)?1:-1;
+  int y_sign=(y>=0)?1:-1
+  if(y_sign==out_sign || abs(y)<=threshold){
+    for(int i=0;i<history_len;i++){
+      uint32_t
+      weights[percIdx][i]+=history[i]>=0?out_sign:(-out_sign);
+    }
+    weights[percIdx][history_len]=out_sign;
+  }
+  for(int i=0;i<history_len-1;i++){
+    history[i]=history[i+1];
+  }
+  history[history_len-1]=outcome;
+}
 //------------------------------------//
 //          Predictor Entry           //
 //------------------------------------//
