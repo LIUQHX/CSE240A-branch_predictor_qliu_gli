@@ -12,7 +12,7 @@
 // TODO:Student Information
 //
 const char *studentName = "Qihong Liu; Guanghao Li";
-const char *studentID   = "A59004984; ";
+const char *studentID   = "A59004984; A59002482";
 const char *email       = "qil011@ucsd.edu; ";
 
 //------------------------------------//
@@ -254,9 +254,49 @@ void train_tournament_predictor(uint32_t pc, uint8_t outcome){
 //               Custom               //
 //------------------------------------//
 
+void init_custom_predictor(){
+	history_len = 128;
+	perceptron_num = 413436;
+	weight_num = history_len + 1;
+	// init global history for perceptron prediction
+	int bitNeed = history_len*sizeof(uint8_t);
+	history = (uint8_t*)malloc(bitNeed);
+	if(history==NULL){
+		fprintf(stderr, "[ERROR] [Malloc] history failed.\n");
+	    exit(-1);
+	}
+	memset(history, 0, bitsNeed);
+	// init weights matrix (perceptronNumber, weightsNumber)
+	weights = (uint32_t**)malloc(sizeof(uint32_t*) * perceptron_num);
+	if(weights==NULL){
+		fprintf(stderr, "[ERROR] [Malloc] weights failed.\n");
+	    exit(-1);
+	}
+	for(int i=0; i<perceptron_num; i++){
+		weights[i] = (uint32_t*)malloc(sizeof(uint32_t) * weight_num);
+		if(weights[i]==NULL){
+			fprintf(stderr, "[ERROR] [Malloc] weights[i] failed.\n");
+		    exit(-1);
+		}
+		memset(weights[i], 0, sizeof(uint32_t) * weight_num); 
+	}
+}
+
+uint8_t make_custom_prediction(pc){
+	// compute index
+	uint32_t percIdx=(pc & ((1<<pcIndexBits)-1)) % perceptron_num;
+	// calculate prediction y
+	uint32_t y = 0;
+	for(int i=0;i<=history_len;i++){
+		if(i != history_len) y += (history[i]>0)?weights[percIdx][i]:(-weights[percIdx][i]);
+		else y += weights[percIdx][i];
+	}
+	if(y>0) return TAKEN;
+	else return NOTTAKEN;
+}
 
 void train_custom_predictor(uint32_t pc, uint8_t outcome){
-  uint32_t percIdx=(pc & 1<<pcIndexBits) % perceptron_num;
+  uint32_t percIdx=(pc & ((1<<pcIndexBits)-1)) % perceptron_num;
   int y=0;
   for(int i=0;i<weight_num;i++){
     y+=(history[i]>0)?weights[percIdx][i]:(-weights[percIdx][i]);
