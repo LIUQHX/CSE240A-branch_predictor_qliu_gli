@@ -258,6 +258,7 @@ void init_custom_predictor(){
 	history_len = 128;
 	perceptron_num = 413436;
 	weight_num = history_len + 1;
+	threshold = 1.93*history_len+14;
 	// init global history for perceptron prediction
 	int bitNeed = history_len*sizeof(uint8_t);
 	history = (uint8_t*)malloc(bitNeed);
