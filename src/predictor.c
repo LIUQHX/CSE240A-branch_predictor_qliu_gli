@@ -320,8 +320,7 @@ void init_custom_predictor(){
   pcmask = make_mask(nbits);
   nweights = histlength+1; // inputs + 1 bias
   threshold = 1.93 * histlength + 14;
-  //nperceptrons = (int)(predictor_size/(nweights*nbits)); // size / (nbits bits per weight * nweights)
-  nperceptrons = 413436;
+  nperceptrons = (int)(predictor_size/(nweights*nbits)); // size / (nbits bits per weight * nweights)
   weights = (int**) malloc(sizeof(int*)*nperceptrons);
   for(int i=0;i<nperceptrons;i++)
     weights[i] = (int*) malloc(sizeof(int)*nweights);
