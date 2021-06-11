@@ -73,6 +73,8 @@ uint32_t threshold;
 uint32_t predictor_size;
 uint32_t pcmask;
 
+int count=0;
+
 uint32_t
 make_mask(uint32_t size)
 {
@@ -309,13 +311,26 @@ void init_custom_predictor(){
 		memset(weights[i], 0, sizeof(uint32_t) * weight_num); 
 	}
   */
-  int size;
   //ghist = 0;
   //gmask = (1<<ghistoryBits -1);
   //lmask = (1<<lhistoryBits -1);
 
+  // tournament
+  ghistoryBits = 13; // Number of bits used for Global History
+  lhistoryBits = 11; // Number of bits used for Local History
+  pcIndexBits = 11; 
+
+  init_tournament_predictor();
+
+  // perceptron
+
+
+
+  pcmask = make_mask(pcIndexBits);
+
+
   nbits = 12;
-  predictor_size = 640000000;
+  predictor_size = 64*1024+256;
   histlength = 128;
   pcmask = make_mask(nbits);
   nweights = histlength+1; // inputs + 1 bias
@@ -337,8 +352,12 @@ void init_custom_predictor(){
     history[i] = 0;
 }
 
-uint32_t y;
 uint8_t make_custom_prediction(uint32_t pc){
+  if(count<1000*10){
+    count++;
+    return  make_tournament_prediction(pc);
+  }
+
   int ppred = 0;
   uint32_t idx;
   int hist;
@@ -392,6 +411,12 @@ void train_custom_predictor(uint32_t pc, uint8_t outcome){
   history[history_len-1]=outcome;
   return;
   */
+
+  if(count<1000*1000){
+    train_tournament_predictor(pc,outcome);
+  }
+
+
   int ppred = 0;
   uint32_t idx;
   int hist;
